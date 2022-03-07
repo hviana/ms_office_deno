@@ -229,9 +229,8 @@ export class MSOfficeApp {
         },
       );
     }
-    return await this.request(
+    return await this.post(
       "v1.0/chats",
-      "POST",
       data,
     );
   }
