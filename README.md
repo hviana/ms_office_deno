@@ -4,10 +4,9 @@ Microsoft Office Integration and Authentication for Deno.
 
 ## How to use
 
-#### Example:
+### Example:
 
-You need to configure your server to receive authorization codes, see the
-example:
+You need to configure your server to receive authorization codes:
 
 ```typescript
 import { req, res, Server } from "https://deno.land/x/faster/mod.ts";
