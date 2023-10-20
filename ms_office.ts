@@ -240,27 +240,51 @@ export class MSOfficeApp {
     channelId: string = "",
     chatId: string = "",
     to: string[] = [],
+    files: { name: string; content: Uint8Array }[] = [],
   ) {
     if (!chatId && !teamId && !channelId) {
       chatId = (await this.createChat(to)).id;
+    }
+    const data: any = {
+      body: {
+        "contentType": "html",
+        "content": msg,
+      },
+    };
+    if (files.length > 0) {
+      data["attachments"] = [];
+    }
+    for (const file of files) {
+      data["attachments"].push({
+        "@odata.type": "#microsoft.graph.fileAttachment",
+        "name": file.name,
+        "contentType": "application/octet-stream",
+        "contentBytes": await this.uint8ArrayToBase64(file.content),
+      });
     }
     return await this.post(
       chatId
         ? `v1.0/chats/${chatId}/messages`
         : `v1.0/teams/${teamId}/channels/${channelId}/messages`,
-      {
-        body: {
-          "contentType": "html",
-          "content": msg,
-        },
-      },
+      data,
     );
+  }
+  async uint8ArrayToBase64(content: Uint8Array) {
+    // use a FileReader to generate a base64 data URI:
+    const base64url: any = await new Promise((r) => {
+      const reader = new FileReader();
+      reader.onload = () => r(reader.result);
+      reader.readAsDataURL(new Blob([content]));
+    });
+    // remove the `data:...;base64,` part from the start
+    return base64url.slice(base64url.indexOf(",") + 1);
   }
   async sendMail(
     from: string | null,
     toList: string[],
     subject: string,
     html: string = "",
+    files: { name: string; content: Uint8Array }[] = [],
   ) {
     const data: any = {
       Message: {
@@ -270,18 +294,20 @@ export class MSOfficeApp {
           "Content": html,
         },
         ToRecipients: [],
-        /*
-          "Attachments": [
-            {
-              "@odata.type": "#Microsoft.OutlookServices.FileAttachment",
-              "Name": "menu.txt",
-              "ContentBytes": "bWFjIGFuZCBjaGVlc2UgdG9kYXk="
-            }
-          ]
-        */
       },
       SaveToSentItems: "false", //default true
     };
+    if (files.length > 0) {
+      data["Message"]["attachments"] = [];
+    }
+    for (const file of files) {
+      data["Message"]["attachments"].push({
+        "@odata.type": "#microsoft.graph.fileAttachment",
+        "name": file.name,
+        "contentType": "application/octet-stream",
+        "contentBytes": await this.uint8ArrayToBase64(file.content),
+      });
+    }
     for (const to of toList) {
       data["Message"]["ToRecipients"].push({ EmailAddress: { Address: to } });
     }
