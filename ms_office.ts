@@ -4,11 +4,13 @@ Githu: https://github.com/hviana
 Page: https://sites.google.com/view/henriqueviana
 cel: +55 (41) 99999-4664
 */
-
-import { storage } from "./deps.ts";
 export class MSOffice {
   static ms_timeout = 300; //if there are xxx seconds left before the token expires, renew
+  static kvDatabase: Deno.Kv = undefined;
 
+  static async initDB() {
+    MSOffice.kvDatabase = await Deno.openKv();
+  }
   static async installUrl(
     host: string,
     redirect_path: string,
@@ -38,13 +40,16 @@ export class MSOffice {
   }
 
   static async saveCode(customer: string, code: string) {
-    await storage.set(`ms_auth_code.${customer}`, code);
+    await MSOffice.initDB();
+    await MSOffice.kvDatabase.set(["ms_auth_code", customer], code);
   }
   static async saveAdminConsentStatus(customer: string, consent: boolean) {
-    await storage.set(`ms_admin_consent.${customer}`, consent);
+    await MSOffice.initDB();
+    await MSOffice.kvDatabase.set(["ms_admin_consent", customer], consent);
   }
   static async deleteUserToken(customer: string) {
-    await storage.deleteList(`ms_token.${customer}`);
+    await MSOffice.initDB();
+    await MSOffice.kvDatabase.delete(["ms_token", customer]);
   }
 
   static async getToken(
@@ -57,11 +62,13 @@ export class MSOffice {
     resource: string,
     tenantID: string,
   ): Promise<string> {
+    await MSOffice.initDB();
     var refresh_token = "";
     const userRef = grant_type === "authorization_code"
-      ? "." + await storage.get(`ms_auth_code.${customer}`)
+      ? "." + await MSOffice.kvDatabase.get(["ms_auth_code", customer])
       : "";
-    const tokenData = await storage.get(`ms_token.${customer}${userRef}`) || {};
+    const tokenData =
+      await MSOffice.kvDatabase.get(["ms_token", customer, userRef]) || {};
     if (tokenData.refresh_token) {
       if (
         ((Math.round(Date.now() / 1000) + MSOffice.ms_timeout) -
@@ -84,7 +91,10 @@ export class MSOffice {
       data["grant_type"] = "refresh_token";
     } else {
       if (grant_type === "authorization_code") {
-        data["code"] = await storage.get(`ms_auth_code.${customer}`);
+        data["code"] = await MSOffice.kvDatabase.get([
+          "ms_auth_code",
+          customer,
+        ]);
         data["resource"] = resource;
       }
       data["grant_type"] = grant_type;
@@ -104,12 +114,12 @@ export class MSOffice {
     );
     const res = await result.json();
     if (res.access_token) {
-      await storage.set(`ms_token.${customer}${userRef}`, {
+      await MSOffice.kvDatabase.set(["ms_token", customer, userRef], {
         ...res,
         time: Math.round(Date.now() / 1000),
       });
     } else if (Object.keys(tokenData).length > 0) {
-      await storage.delete(`ms_token.${customer}${userRef}`);
+      await MSOffice.kvDatabase.delete(["ms_token", customer, userRef]);
       return await MSOffice.getToken(
         client_id,
         client_secret,
