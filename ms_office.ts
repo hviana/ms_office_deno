@@ -69,7 +69,7 @@ export class MSOffice {
     await MSOffice.initDB();
     var refresh_token = "";
     const userRef = grant_type === "authorization_code"
-      ? "." + await MSOffice.kvDatabase.get(["ms_auth_code", customer])
+      ? await MSOffice.kvDatabase.get(["ms_auth_code", customer])
       : "";
     const tokenData =
       await MSOffice.kvDatabase.get(["ms_token", customer, userRef]) || {};
