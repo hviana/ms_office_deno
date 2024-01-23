@@ -7,9 +7,13 @@ cel: +55 (41) 99999-4664
 export class MSOffice {
   static ms_timeout = 300; //if there are xxx seconds left before the token expires, renew
   static kvDatabase: Deno.Kv = undefined;
+  static initialized: boolean = false;
 
   static async initDB() {
-    MSOffice.kvDatabase = await Deno.openKv();
+    if (!MSOffice.initialized) {
+      MSOffice.kvDatabase = await Deno.openKv();
+      MSOffice.initialized = true;
+    }
   }
   static async installUrl(
     host: string,
