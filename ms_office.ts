@@ -69,10 +69,11 @@ export class MSOffice {
     await MSOffice.initDB();
     var refresh_token = "";
     const userRef = grant_type === "authorization_code"
-      ? await MSOffice.kvDatabase.get(["ms_auth_code", customer])
+      ? (await MSOffice.kvDatabase.get(["ms_auth_code", customer])).value
       : "";
     const tokenData =
-      await MSOffice.kvDatabase.get(["ms_token", customer, userRef]) || {};
+      (await MSOffice.kvDatabase.get(["ms_token", customer, userRef])).value ||
+      {};
     if (tokenData.refresh_token) {
       if (
         ((Math.round(Date.now() / 1000) + MSOffice.ms_timeout) -
@@ -95,10 +96,10 @@ export class MSOffice {
       data["grant_type"] = "refresh_token";
     } else {
       if (grant_type === "authorization_code") {
-        data["code"] = await MSOffice.kvDatabase.get([
+        data["code"] = (await MSOffice.kvDatabase.get([
           "ms_auth_code",
           customer,
-        ]);
+        ])).value;
         data["resource"] = resource;
       }
       data["grant_type"] = grant_type;
