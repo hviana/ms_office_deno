@@ -15,7 +15,7 @@ export class MSOffice {
       MSOffice.initialized = true;
     }
   }
-  static async installUrl(
+  static installUrl(
     host: string,
     redirect_path: string,
     customer: string,
@@ -28,7 +28,7 @@ export class MSOffice {
       encodeURIComponent(`${host}/${redirect_path}/${customer}`)
     }`;
   }
-  static async adminConsentUrl(
+  static adminConsentUrl(
     host: string,
     redirect_path: string,
     customer: string,
