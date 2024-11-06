@@ -275,7 +275,7 @@ export class MSOfficeApp {
       data["attachments"].push({
         "id": id,
         "contentType": "reference",
-        "contentUrl": this.uint8ArrayToBase64Url(file.content),
+        "contentUrl": await this.uint8ArrayToBase64Url(file.content),
         "name": file.name,
       });
     }
