@@ -284,14 +284,17 @@ export class MSOfficeApp {
       data,
     );
   }
-  async uint8ArrayToBase64(content: Uint8Array) {
+  async uint8ArrayToBase64Url(content: Uint8Array) {
     // use a FileReader to generate a base64 data URI:
     const base64url: any = await new Promise((r) => {
       const reader = new FileReader();
       reader.onload = () => r(reader.result);
       reader.readAsDataURL(new Blob([content]));
     });
-    // remove the `data:...;base64,` part from the start
+    return base64url;
+  }
+  async uint8ArrayToBase64(content: Uint8Array) {
+    const base64url = await this.uint8ArrayToBase64Url(content);
     return base64url.slice(base64url.indexOf(",") + 1);
   }
   async sendMail(
@@ -316,11 +319,13 @@ export class MSOfficeApp {
       data["Message"]["attachments"] = [];
     }
     for (const file of files) {
+      const id = "e" + crypto.randomUUID();
+      data["Body"]["Content"] += `<br/><attachment id="${id}"></attachment>`;
       data["Message"]["attachments"].push({
-        "@odata.type": "#microsoft.graph.fileAttachment",
+        "id": id,
+        "contentType": "reference",
+        "contentUrl": this.uint8ArrayToBase64Url(file.content),
         "name": file.name,
-        "contentType": "application/octet-stream",
-        "contentBytes": await this.uint8ArrayToBase64(file.content),
       });
     }
     for (const to of toList) {
