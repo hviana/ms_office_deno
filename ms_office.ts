@@ -223,6 +223,7 @@ export class MSOfficeApp {
       res = await request.json();
     } catch (e) {}
     if (res.error) {
+      console.log(res);
       throw new Error(res.error.message);
     }
     if (res.ok !== undefined && !res.ok) {
@@ -267,16 +268,17 @@ export class MSOfficeApp {
       },
     };
     if (files.length > 0) {
-      data["hostedContents"] = [];
+      data["attachments"] = [];
     }
-    let i = 1;
     for (const file of files) {
-      data["body"]["content"] +=
-        `<br/><a href="../hostedContents/${i}/$value">${file.name}</a>`;
-      data["hostedContents"].push({
-        "@microsoft.graph.temporaryId": `${i}`,
-        "contentType": "application/octet-stream",
-        "contentBytes": await this.uint8ArrayToBase64(file.content),
+      const id = "e" + crypto.randomUUID();
+      data["body"]["content"] += `<br><attachment id="${id}"></attachment>`;
+      data["attachments"].push({
+        "id": id,
+        "@odata.type": "microsoft.graph.chatMessageAttachment",
+        "name": file.name,
+        "contentType": "reference",
+        "contentUrl": await this.uint8ArrayToBase64Url(file.content),
       });
     }
     return await this.post(
