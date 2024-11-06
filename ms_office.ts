@@ -267,16 +267,16 @@ export class MSOfficeApp {
       },
     };
     if (files.length > 0) {
-      data["attachments"] = [];
+      data["hostedContents"] = [];
     }
+    let i = 1;
     for (const file of files) {
-      const id = "e" + crypto.randomUUID();
-      data["body"]["content"] += `<br/><attachment id="${id}"></attachment>`;
-      data["attachments"].push({
-        "id": id,
-        "contentType": "reference",
-        "contentUrl": await this.uint8ArrayToBase64Url(file.content),
-        "name": file.name,
+      data["body"]["content"] +=
+        `<br/><a href="../hostedContents/${i}/$value">${file.name}</a>`;
+      data["hostedContents"].push({
+        "@microsoft.graph.temporaryId": `${i}`,
+        "contentType": "application/octet-stream",
+        "contentBytes": await this.uint8ArrayToBase64(file.content),
       });
     }
     return await this.post(
